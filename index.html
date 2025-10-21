@@ -3,33 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relationship Insight Tool</title>
+    <title>Relationship Compass Predictor</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Relationship Insight Tool</h1>
-            <p class="subtitle">Gain valuable insights into relationship dynamics through thoughtful reflection</p>
+            <h1>Relationship Compass Predictor</h1>
+            <p class="subtitle">Navigate your relationship journey with AI-powered insights and guidance</p>
         </header>
         
         <div class="card">
             <h2>About This Tool</h2>
-            <p>This interactive tool helps you reflect on various aspects of your relationship. Answer the questions below thoughtfully, and our AI will provide insights based on relationship research patterns.</p>
+            <p>This interactive compass helps you understand relationship dynamics through thoughtful reflection. Answer the questions below, and our AI will provide personalized insights based on established relationship research patterns.</p>
             <p><small><em>Note: This is for educational and self-reflection purposes only. Always seek professional advice for serious relationship concerns.</em></small></p>
         </div>
+
+        <!-- EDA Panel will be inserted here by JavaScript -->
         
         <div class="card">
             <h2>Relationship Assessment</h2>
-            <p>Rate the following statements on a scale from 0 (Strongly Disagree) to 4 (Strongly Agree):</p>
+            <p>Rate the following statements on a scale from 0 (Never) to 4 (Always):</p>
             
             <div class="question-grid" id="questionsContainer">
                 <!-- Questions will be dynamically generated -->
             </div>
             
-            <div style="text-align: center; margin-top: 30px;">
-                <button class="btn" id="analyzeBtn">Get Insights</button>
+            <div class="btn-container">
+                <button class="btn" id="analyzeBtn">Get Relationship Insights</button>
             </div>
         </div>
         
@@ -39,18 +41,20 @@
         </div>
         
         <div class="card result-container" id="resultSection">
-            <h2>Relationship Insights</h2>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+            <h2>Relationship Compass Results</h2>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
             </div>
             <div class="result-score" id="resultScore">0%</div>
             <div class="result-message" id="resultMessage"></div>
             
             <div class="feature-importance" id="featureImportance">
-                <h3>Key Factors in Your Assessment</h3>
+                <h3>Key Relationship Factors</h3>
             </div>
             
-            <div style="text-align: center; margin-top: 30px;">
+            <div class="btn-container">
                 <button class="btn" id="resetBtn">Start New Assessment</button>
             </div>
         </div>
@@ -58,14 +62,14 @@
         <div class="card error-container" id="errorSection" style="display: none;">
             <h2>Something Went Wrong</h2>
             <p id="errorMessage"></p>
-            <div style="text-align: center; margin-top: 20px;">
+            <div class="btn-container">
                 <button class="btn" id="retryBtn">Try Again</button>
             </div>
         </div>
     </div>
     
     <footer>
-        <p>This tool uses machine learning to analyze relationship patterns based on established research.</p>
+        <p>This compass uses machine learning to analyze relationship patterns based on established psychological research.</p>
         <p>Remember: Every relationship is unique and requires ongoing communication and effort.</p>
     </footer>
 
