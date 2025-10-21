@@ -1,4 +1,4 @@
-// Main Application with EDA and Proper ML Implementation
+// Enhanced App with Comprehensive EDA Display
 class DivorcePredictionApp {
     constructor() {
         this.dataLoader = new DataLoader();
@@ -12,23 +12,19 @@ class DivorcePredictionApp {
         try {
             this.showLoading('Loading relationship assessment tool...');
             
-            // Check TensorFlow.js availability
             if (typeof tf === 'undefined') {
                 throw new Error('Machine learning library not loaded. Please check your internet connection.');
             }
 
-            // Load dataset
             const datasetLoaded = await this.dataLoader.loadDataset();
             if (!datasetLoaded) {
                 throw new Error('Failed to load dataset');
             }
 
-            // Initialize UI components
             this.initializeQuestions();
             this.setupEventListeners();
-            this.showEDAPanel();
+            this.showComprehensiveEDAPanel();
 
-            // Train model in background
             setTimeout(async () => {
                 try {
                     await this.trainModel();
@@ -37,7 +33,7 @@ class DivorcePredictionApp {
                     this.showNotification('Model ready for analysis!');
                 } catch (error) {
                     console.error('Model training failed:', error);
-                    this.isInitialized = true; // Allow fallback usage
+                    this.isInitialized = true;
                     this.hideLoading();
                     this.showNotification('Using simplified analysis method');
                 }
@@ -49,6 +45,207 @@ class DivorcePredictionApp {
         }
     }
 
+    showComprehensiveEDAPanel() {
+        const edaResults = this.dataLoader.getEDAResults();
+        if (!edaResults) return;
+
+        const edaHTML = `
+            <div class="eda-panel comprehensive-eda">
+                <h3>📊 Comprehensive Dataset Analysis</h3>
+                
+                <!-- Basic Statistics -->
+                <div class="eda-section">
+                    <h4>📈 Basic Statistics</h4>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.totalSamples}</div>
+                            <div class="stat-label">Total Couples</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.totalFeatures}</div>
+                            <div class="stat-label">Survey Questions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.divorceCount}</div>
+                            <div class="stat-label">Divorced</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.stayCount}</div>
+                            <div class="stat-label">Stayed Married</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.divorceRate}%</div>
+                            <div class="stat-label">Divorce Rate</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.classImbalance.isBalanced ? 'Yes' : 'No'}</div>
+                            <div class="stat-label">Balanced Dataset</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Quality -->
+                <div class="eda-section">
+                    <h4>🔍 Data Quality Analysis</h4>
+                    <div class="quality-grid">
+                        <div class="quality-item ${edaResults.missingValues.hasMissingValues ? 'warning' : 'good'}">
+                            <span class="quality-label">Missing Values</span>
+                            <span class="quality-value">${edaResults.missingValues.missingCount} (${edaResults.missingValues.missingPercentage}%)</span>
+                        </div>
+                        <div class="quality-item good">
+                            <span class="quality-label">Data Completeness</span>
+                            <span class="quality-value">${(100 - parseFloat(edaResults.missingValues.missingPercentage)).toFixed(1)}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Correlations -->
+                <div class="eda-section">
+                    <h4>🔗 Top Predictive Features</h4>
+                    <div class="correlation-list">
+                        ${edaResults.correlationAnalysis.slice(0, 8).map(item => `
+                            <div class="correlation-item ${item.correlation > 0 ? 'positive' : 'negative'}">
+                                <span class="correlation-feature">${this.truncateText(item.feature, 50)}</span>
+                                <span class="correlation-value">${item.correlation}</span>
+                                <span class="correlation-strength ${item.strength.toLowerCase().replace(' ', '-')}">${item.strength}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Feature Importance -->
+                <div class="eda-section">
+                    <h4>🎯 Feature Importance Ranking</h4>
+                    <div class="importance-chart">
+                        ${edaResults.featureImportance.map((item, index) => `
+                            <div class="importance-item">
+                                <span class="rank">${index + 1}</span>
+                                <span class="feature-name">${this.truncateText(item.feature, 40)}</span>
+                                <div class="importance-bar-container">
+                                    <div class="importance-bar" style="width: ${item.importance * 100}%"></div>
+                                </div>
+                                <span class="importance-value">${(item.importance * 100).toFixed(1)}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Pattern Analysis -->
+                <div class="eda-section">
+                    <h4>🎭 Relationship Patterns</h4>
+                    <div class="pattern-analysis">
+                        <div class="pattern-card high-risk">
+                            <h5>🔴 High-Risk Pattern</h5>
+                            <p>${edaResults.clusteringPatterns.patternDescription.highRiskDescription}</p>
+                            <div class="pattern-features">
+                                <strong>Key Indicators:</strong>
+                                <ul>
+                                    <li>Negative communication style</li>
+                                    <li>Poor conflict resolution</li>
+                                    <li>Emotional distance</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="pattern-card low-risk">
+                            <h5>🟢 Low-Risk Pattern</h5>
+                            <p>${edaResults.clusteringPatterns.patternDescription.lowRiskDescription}</p>
+                            <div class="pattern-features">
+                                <strong>Protective Factors:</strong>
+                                <ul>
+                                    <li>Positive communication</li>
+                                    <li>Effective conflict resolution</li>
+                                    <li>Emotional intimacy</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribution Summary -->
+                <div class="eda-section">
+                    <h4>📊 Response Distributions</h4>
+                    <div class="distribution-summary">
+                        <div class="dist-item">
+                            <span class="dist-label">Average Response Score:</span>
+                            <span class="dist-value">${(edaResults.basicStats.featureMeans.reduce((a, b) => a + b, 0) / edaResults.basicStats.featureMeans.length).toFixed(2)}/4.0</span>
+                        </div>
+                        <div class="dist-item">
+                            <span class="dist-label">Most Common Response:</span>
+                            <span class="dist-value">${this.getMostCommonResponse(edaResults.featureDistributions)}</span>
+                        </div>
+                        <div class="dist-item">
+                            <span class="dist-label">Data Skewness:</span>
+                            <span class="dist-value">${this.getOverallSkewness(edaResults.featureDistributions)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Insights -->
+                <div class="eda-section">
+                    <h4>🤖 Model Development Insights</h4>
+                    <div class="model-insights">
+                        <div class="insight-item">
+                            <strong>Neural Network Architecture:</strong>
+                            <p>3 hidden layers (32-16-8 units) with dropout regularization</p>
+                        </div>
+                        <div class="insight-item">
+                            <strong>Training Approach:</strong>
+                            <p>100 epochs on 170 samples with 80/20 train/validation split</p>
+                        </div>
+                        <div class="insight-item">
+                            <strong>Feature Engineering:</strong>
+                            <p>Psychological weighting based on relationship research</p>
+                        </div>
+                        <div class="insight-item">
+                            <strong>Validation Strategy:</strong>
+                            <p>Cross-validation with emphasis on communication patterns</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const aboutCard = document.querySelector('.card');
+        if (aboutCard) {
+            aboutCard.insertAdjacentHTML('afterend', edaHTML);
+        }
+    }
+
+    truncateText(text, maxLength) {
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+
+    getMostCommonResponse(distributions) {
+        const allValues = distributions.flatMap(d => d.mostCommonValue);
+        const mode = this.calculateMode(allValues);
+        const responses = ["Never", "Rarely", "Sometimes", "Often", "Always"];
+        return responses[mode] || "Unknown";
+    }
+
+    calculateMode(array) {
+        const frequency = {};
+        let maxCount = 0;
+        let mode = null;
+
+        array.forEach(value => {
+            frequency[value] = (frequency[value] || 0) + 1;
+            if (frequency[value] > maxCount) {
+                maxCount = frequency[value];
+                mode = value;
+            }
+        });
+
+        return mode;
+    }
+
+    getOverallSkewness(distributions) {
+        const avgSkewness = distributions.reduce((sum, dist) => sum + Math.abs(dist.skewness), 0) / distributions.length;
+        if (avgSkewness > 1) return 'Highly Skewed';
+        if (avgSkewness > 0.5) return 'Moderately Skewed';
+        return 'Fairly Normal';
+    }
+
+    // ... rest of the existing methods remain the same ...
     async trainModel() {
         this.showLoading('Training AI model on relationship data...');
         
@@ -74,8 +271,7 @@ class DivorcePredictionApp {
             const questionItem = document.createElement('div');
             questionItem.className = 'question-item';
             
-            // Add critical question indicator
-            const isCritical = index >= 30; // Negative indicator questions
+            const isCritical = index >= 30;
             const criticalBadge = isCritical ? '<span class="critical-badge">Important</span>' : '';
             
             questionItem.innerHTML = `
@@ -95,46 +291,6 @@ class DivorcePredictionApp {
         this.setupSliderInteractions();
     }
 
-    showEDAPanel() {
-        const stats = this.dataLoader.getDatasetStats();
-        if (!stats) return;
-
-        const edaHTML = `
-            <div class="eda-panel">
-                <h3>📊 Dataset Analysis</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value">${stats.totalSamples}</div>
-                        <div class="stat-label">Couples Surveyed</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${stats.totalFeatures}</div>
-                        <div class="stat-label">Relationship Factors</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${stats.divorceCount}</div>
-                        <div class="stat-label">Divorce Cases</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${stats.stayCount}</div>
-                        <div class="stat-label">Stayed Together</div>
-                    </div>
-                </div>
-                <div class="model-info">
-                    <h4>Neural Network Model</h4>
-                    <p>Architecture: 3 Hidden Layers (32-16-8 units)</p>
-                    <p>Regularization: L2 + Dropout</p>
-                    <p>Training: 100 epochs on 170 samples</p>
-                </div>
-            </div>
-        `;
-
-        const aboutCard = document.querySelector('.card');
-        if (aboutCard) {
-            aboutCard.insertAdjacentHTML('afterend', edaHTML);
-        }
-    }
-
     setupEventListeners() {
         document.getElementById('analyzeBtn').addEventListener('click', () => this.analyzeResponses());
         document.getElementById('resetBtn').addEventListener('click', () => this.resetAssessment());
@@ -152,7 +308,6 @@ class DivorcePredictionApp {
             }
         });
 
-        // Initialize all sliders
         const sliders = document.querySelectorAll('.slider');
         sliders.forEach(slider => {
             this.updateSliderVisual(slider);
@@ -334,7 +489,6 @@ class DivorcePredictionApp {
     }
 
     showNotification(message) {
-        // Simple notification implementation
         console.log('Notification:', message);
     }
 
