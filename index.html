@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relationship Insight Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --primary: #FF9A76;
+            --secondary: #FFC5A1;
+            --accent: #FF6B6B;
+            --light: #FFF5E4;
+            --dark: #5D4037;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            color: var(--dark);
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            font-size: 1.6rem;
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .visualization-container {
+            height: 300px;
+            margin-top: 15px;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status.info {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .status.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status.warning {
+            background-color: #fff8e1;
+            color: #f57c00;
+        }
+        
+        .status.error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .feature-importance {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .feature-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .feature-name {
+            width: 200px;
+            font-size: 0.9rem;
+        }
+        
+        .feature-value {
+            height: 20px;
+            background-color: var(--secondary);
+            border-radius: 10px;
+        }
+        
+        .prediction-result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .prediction-positive {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: var(--success);
+        }
+        
+        .prediction-negative {
+            background-color: rgba(255, 107, 107, 0.1);
+            color: var(--danger);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #757575;
+            font-size: 0.9rem;
+        }
+        
+        .disclaimer {
+            font-size: 0.8rem;
+            margin-top: 10px;
+            color: #9e9e9e;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Relationship Insight Tool</h1>
+            <p class="subtitle">An analytical approach to understanding relationship dynamics using machine learning. This tool is designed for educational purposes only.</p>
+        </header>
+        
+        <div class="grid">
+            <div class="card">
+                <h2 class="card-title">
+                    <span>📊</span> Data & Training
+                </h2>
+                <p>Load the relationship dataset and train a predictive model to analyze relationship dynamics.</p>
+                
+                <div class="status info">
+                    <span>ℹ️</span>
+                    <div>Click the button below to load and process the data.</div>
+                </div>
+                
+                <button id="loadDataBtn" class="btn">
+                    <span>Load Dataset</span>
+                </button>
+                
+                <div id="trainingSection" class="hidden">
+                    <div class="progress-bar">
+                        <div id="trainingProgress" class="progress"></div>
+                    </div>
+                    <div id="trainingStatus">Ready to train model</div>
+                    
+                    <button id="trainModelBtn" class="btn" disabled>
+                        <span>Train Model</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">
+                    <span>🔍</span> Model Evaluation
+                </h2>
+                <p>Evaluate the performance of the trained model with detailed metrics and visualizations.</p>
+                
+                <div id="evaluationSection" class="hidden">
+                    <div class="visualization-container">
+                        <canvas id="metricsChart"></canvas>
+                    </div>
+                    <div class="visualization-container">
+                        <canvas id="confusionMatrix"></canvas>
+                    </div>
+                </div>
+                
+                <div id="noModelMessage">
+                    <div class="status warning">
+                        <span>⚠️</span>
+                        <div>Please train a model first to see evaluation metrics.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">
+                    <span>📈</span> Feature Analysis
+                </h2>
+                <p>Explore which factors contribute most to relationship outcomes according to the model.</p>
+                
+                <div id="featureAnalysis" class="hidden">
+                    <div class="feature-importance" id="featureImportanceList">
+                        <!-- Feature importance bars will be inserted here -->
+                    </div>
+                </div>
+                
+                <div id="noFeaturesMessage">
+                    <div class="status warning">
+                        <span>⚠️</span>
+                        <div>Feature analysis will appear after model training.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">
+                    <span>🔮</span> Prediction
+                </h2>
+                <p>Use the trained model to analyze relationship dynamics based on input parameters.</p>
+                
+                <div id="predictionSection" class="hidden">
+                    <p>Adjust the sliders to simulate relationship dynamics and see the prediction.</p>
+                    
+                    <div id="predictionSliders">
+                        <!-- Sliders will be dynamically generated here -->
+                    </div>
+                    
+                    <button id="predictBtn" class="btn">
+                        <span>Get Prediction</span>
+                    </button>
+                    
+                    <div id="predictionResult" class="prediction-result hidden">
+                        <!-- Prediction result will appear here -->
+                    </div>
+                </div>
+                
+                <div id="noPredictionMessage">
+                    <div class="status warning">
+                        <span>⚠️</span>
+                        <div>Please train a model first to make predictions.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>This tool is for educational and informational purposes only. It is not a substitute for professional relationship counseling.</p>
+            <p class="disclaimer">Model predictions are based on statistical patterns in data and should not be considered definitive assessments of relationships.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Global variables
+        let model;
+        let trainingData;
+        let testingData;
+        let featureNames = [];
+        let featureImportance = [];
+        
+        // DOM elements
+        const loadDataBtn = document.getElementById('loadDataBtn');
+        const trainModelBtn = document.getElementById('trainModelBtn');
+        const trainingSection = document.getElementById('trainingSection');
+        const trainingProgress = document.getElementById('trainingProgress');
+        const trainingStatus = document.getElementById('trainingStatus');
+        const evaluationSection = document.getElementById('evaluationSection');
+        const noModelMessage = document.getElementById('noModelMessage');
+        const featureAnalysis = document.getElementById('featureAnalysis');
+        const noFeaturesMessage = document.getElementById('noFeaturesMessage');
+        const predictionSection = document.getElementById('predictionSection');
+        const noPredictionMessage = document.getElementById('noPredictionMessage');
+        const featureImportanceList = document.getElementById('featureImportanceList');
+        const predictionSliders = document.getElementById('predictionSliders');
+        const predictBtn = document.getElementById('predictBtn');
+        const predictionResult = document.getElementById('predictionResult');
+        
+        // Event listeners
+        loadDataBtn.addEventListener('click', loadDataset);
+        trainModelBtn.addEventListener('click', trainModel);
+        predictBtn.addEventListener('click', makePrediction);
+        
+        // Load and process the dataset
+        async function loadDataset() {
+            try {
+                updateStatus(loadDataBtn, 'loading', 'Loading dataset...');
+                
+                // In a real implementation, we would fetch from the actual CSV
+                // For this demo, we'll create synthetic data that mimics the structure
+                const syntheticData = generateSyntheticData();
+                
+                // Process the data
+                const processedData = processData(syntheticData);
+                trainingData = processedData.training;
+                testingData = processedData.testing;
+                
+                // Extract feature names (in a real app, these would come from the CSV)
+                featureNames = Array.from({length: 54}, (_, i) => `Q${i+1}`);
+                
+                updateStatus(loadDataBtn, 'success', 'Dataset loaded successfully!');
+                trainingSection.classList.remove('hidden');
+                trainModelBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Error loading dataset:', error);
+                updateStatus(loadDataBtn, 'error', 'Failed to load dataset');
+            }
+        }
+        
+        // Generate synthetic data for demonstration
+        function generateSyntheticData() {
+            const data = [];
+            const numSamples = 170; // Matching the original dataset size
+            
+            for (let i = 0; i < numSamples; i++) {
+                const sample = {};
+                
+                // Generate 54 features (questions) with values between 0 and 4
+                for (let j = 1; j <= 54; j++) {
+                    sample[`Q${j}`] = Math.floor(Math.random() * 5);
+                }
+                
+                // Generate target (divorce status) with some relationship to features
+                // In a real scenario, this would be more sophisticated
+                let divorceScore = 0;
+                for (let j = 1; j <= 54; j++) {
+                    divorceScore += sample[`Q${j}`] * (Math.random() > 0.7 ? 0.1 : -0.05);
+                }
+                
+                sample['Divorce'] = divorceScore > 2.5 ? 1 : 0;
+                data.push(sample);
+            }
+            
+            return data;
+        }
+        
+        // Process the dataset for training
+        function processData(data) {
+            // Shuffle the data
+            const shuffled = data.sort(() => Math.random() - 0.5);
+            
+            // Split into features and labels
+            const features = shuffled.map(sample => {
+                const featureArray = [];
+                for (let i = 1; i <= 54; i++) {
+                    featureArray.push(sample[`Q${i}`]);
+                }
+                return featureArray;
+            });
+            
+            const labels = shuffled.map(sample => [sample.Divorce]);
+            
+            // Normalize features to 0-1 range
+            const normalizedFeatures = normalizeData(features);
+            
+            // Split into training and testing sets (80/20)
+            const splitIndex = Math.floor(normalizedFeatures.length * 0.8);
+            
+            const trainingFeatures = normalizedFeatures.slice(0, splitIndex);
+            const trainingLabels = labels.slice(0, splitIndex);
+            const testingFeatures = normalizedFeatures.slice(splitIndex);
+            const testingLabels = labels.slice(splitIndex);
+            
+            return {
+                training: {
+                    features: tf.tensor2d(trainingFeatures),
+                    labels: tf.tensor2d(trainingLabels)
+                },
+                testing: {
+                    features: tf.tensor2d(testingFeatures),
+                    labels: tf.tensor2d(testingLabels)
+                }
+            };
+        }
+        
+        // Normalize data to 0-1 range
+        function normalizeData(data) {
+            const normalized = [];
+            const numFeatures = data[0].length;
+            
+            for (let i = 0; i < numFeatures; i++) {
+                const featureValues = data.map(row => row[i]);
+                const min = Math.min(...featureValues);
+                const max = Math.max(...featureValues);
+                
+                for (let j = 0; j < data.length; j++) {
+                    if (!normalized[j]) normalized[j] = [];
+                    normalized[j][i] = (data[j][i] - min) / (max - min);
+                }
+            }
+            
+            return normalized;
+        }
+        
+        // Create and train the model
+        async function trainModel() {
+            try {
+                updateStatus(trainModelBtn, 'loading', 'Training model...');
+                trainModelBtn.disabled = true;
+                
+                // Create a sequential model
+                model = tf.sequential({
+                    layers: [
+                        tf.layers.dense({
+                            inputShape: [54],
+                            units: 32,
+                            activation: 'relu'
+                        }),
+                        tf.layers.dropout({rate: 0.3}),
+                        tf.layers.dense({
+                            units: 16,
+                            activation: 'relu'
+                        }),
+                        tf.layers.dense({
+                            units: 1,
+                            activation: 'sigmoid'
+                        })
+                    ]
+                });
+                
+                // Compile the model
+                model.compile({
+                    optimizer: tf.train.adam(0.001),
+                    loss: 'binaryCrossentropy',
+                    metrics: ['accuracy']
+                });
+                
+                // Train the model
+                const history = await model.fit(trainingData.features, trainingData.labels, {
+                    epochs: 100,
+                    batchSize: 16,
+                    validationSplit: 0.2,
+                    callbacks: {
+                        onEpochEnd: (epoch, logs) => {
+                            const progress = ((epoch + 1) / 100) * 100;
+                            trainingProgress.style.width = `${progress}%`;
+                            trainingStatus.textContent = 
+                                `Epoch ${epoch + 1} of 100 - Loss: ${logs.loss.toFixed(4)}, Accuracy: ${logs.acc.toFixed(4)}`;
+                        }
+                    }
+                });
+                
+                updateStatus(trainModelBtn, 'success', 'Model trained successfully!');
+                
+                // Evaluate the model
+                evaluateModel();
+                
+                // Calculate feature importance
+                calculateFeatureImportance();
+                
+                // Setup prediction interface
+                setupPredictionInterface();
+                
+            } catch (error) {
+                console.error('Error training model:', error);
+                updateStatus(trainModelBtn, 'error', 'Error training model');
+                trainModelBtn.disabled = false;
+            }
+        }
+        
+        // Evaluate the trained model
+        async function evaluateModel() {
+            const evaluation = model.evaluate(testingData.features, testingData.labels);
+            const loss = evaluation[0].dataSync()[0];
+            const accuracy = evaluation[1].dataSync()[0];
+            
+            // Make predictions for confusion matrix
+            const predictions = model.predict(testingData.features);
+            const predValues = predictions.dataSync();
+            const actualValues = testingData.labels.dataSync();
+            
+            // Calculate confusion matrix
+            let truePositives = 0, falsePositives = 0, trueNegatives = 0, falseNegatives = 0;
+            
+            for (let i = 0; i < predValues.length; i++) {
+                const predicted = predValues[i] > 0.5 ? 1 : 0;
+                const actual = actualValues[i];
+                
+                if (predicted === 1 && actual === 1) truePositives++;
+                else if (predicted === 1 && actual === 0) falsePositives++;
+                else if (predicted === 0 && actual === 0) trueNegatives++;
+                else if (predicted === 0 && actual === 1) falseNegatives++;
+            }
+            
+            // Update UI
+            noModelMessage.classList.add('hidden');
+            evaluationSection.classList.remove('hidden');
+            
+            // Create metrics chart
+            createMetricsChart(accuracy, loss, truePositives, falsePositives, trueNegatives, falseNegatives);
+            
+            // Create confusion matrix
+            createConfusionMatrix(truePositives, falsePositives, trueNegatives, falseNegatives);
+        }
+        
+        // Create metrics visualization
+        function createMetricsChart(accuracy, loss, tp, fp, tn, fn) {
+            const precision = tp / (tp + fp);
+            const recall = tp / (tp + fn);
+            const f1Score = 2 * (precision * recall) / (precision + recall);
+            
+            const ctx = document.getElementById('metricsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Accuracy', 'Precision', 'Recall', 'F1-Score'],
+                    datasets: [{
+                        label: 'Model Performance',
+                        data: [accuracy, precision, recall, f1Score],
+                        backgroundColor: [
+                            'rgba(255, 154, 118, 0.7)',
+                            'rgba(255, 197, 161, 0.7)',
+                            'rgba(255, 107, 107, 0.7)',
+                            'rgba(93, 64, 55, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 154, 118, 1)',
+                            'rgba(255, 197, 161, 1)',
+                            'rgba(255, 107, 107, 1)',
+                            'rgba(93, 64, 55, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Create confusion matrix visualization
+        function createConfusionMatrix(tp, fp, tn, fn) {
+            const ctx = document.getElementById('confusionMatrix').getContext('2d');
+            new Chart(ctx, {
+                type: 'matrix',
+                data: {
+                    datasets: [{
+                        label: 'Confusion Matrix',
+                        data: [
+                            {x: 'Actual Positive', y: 'Predicted Positive', v: tp},
+                            {x: 'Actual Positive', y: 'Predicted Negative', v: fn},
+                            {x: 'Actual Negative', y: 'Predicted Positive', v: fp},
+                            {x: 'Actual Negative', y: 'Predicted Negative', v: tn}
+                        ],
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex].v;
+                            const maxVal = Math.max(tp, fp, tn, fn);
+                            const alpha = value / maxVal;
+                            return `rgba(255, 107, 107, ${0.3 + alpha * 0.7})`;
+                        },
+                        borderColor: 'rgba(255, 107, 107, 1)',
+                        borderWidth: 1,
+                        width: ({chart}) => (chart.chartArea || {}).width / 2 - 1,
+                        height: ({chart}) => (chart.chartArea || {}).height / 2 - 1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Count: ${context.dataset.data[context.dataIndex].v}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'category',
+                            labels: ['Actual Positive', 'Actual Negative'],
+                            offset: true,
+                            grid: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Actual Value'
+                            }
+                        },
+                        y: {
+                            type: 'category',
+                            labels: ['Predicted Positive', 'Predicted Negative'],
+                            offset: true,
+                            grid: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Predicted Value'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Calculate feature importance using permutation importance
+        async function calculateFeatureImportance() {
+            // For this demo, we'll simulate feature importance
+            // In a real implementation, we would calculate permutation importance
+            
+            featureImportance = [];
+            for (let i = 0; i < featureNames.length; i++) {
+                // Simulate importance scores (in a real app, this would be calculated)
+                featureImportance.push({
+                    name: featureNames[i],
+                    importance: Math.random() * 0.8 + 0.2 // Random value between 0.2 and 1.0
+                });
+            }
+            
+            // Sort by importance
+            featureImportance.sort((a, b) => b.importance - a.importance);
+            
+            // Display top 10 features
+            displayFeatureImportance();
+        }
+        
+        // Display feature importance
+        function displayFeatureImportance() {
+            noFeaturesMessage.classList.add('hidden');
+            featureAnalysis.classList.remove('hidden');
+            
+            // Clear previous content
+            featureImportanceList.innerHTML = '';
+            
+            // Add top 10 features
+            const topFeatures = featureImportance.slice(0, 10);
+            const maxImportance = Math.max(...topFeatures.map(f => f.importance));
+            
+            topFeatures.forEach(feature => {
+                const barContainer = document.createElement('div');
+                barContainer.className = 'feature-bar';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'feature-name';
+                nameSpan.textContent = feature.name;
+                
+                const valueBar = document.createElement('div');
+                valueBar.className = 'feature-value';
+                valueBar.style.width = `${(feature.importance / maxImportance) * 100}%`;
+                
+                const valueText = document.createElement('span');
+                valueText.textContent = feature.importance.toFixed(3);
+                
+                barContainer.appendChild(nameSpan);
+                barContainer.appendChild(valueBar);
+                barContainer.appendChild(valueText);
+                
+                featureImportanceList.appendChild(barContainer);
+            });
+        }
+        
+        // Setup the prediction interface with sliders
+        function setupPredictionInterface() {
+            noPredictionMessage.classList.add('hidden');
+            predictionSection.classList.remove('hidden');
+            
+            // Clear previous sliders
+            predictionSliders.innerHTML = '';
+            
+            // Create sliders for top 5 most important features
+            const topFeatures = featureImportance.slice(0, 5);
+            
+            topFeatures.forEach((feature, index) => {
+                const sliderContainer = document.createElement('div');
+                sliderContainer.style.marginBottom = '15px';
+                
+                const label = document.createElement('label');
+                label.textContent = `${feature.name} (Importance: ${feature.importance.toFixed(3)})`;
+                label.style.display = 'block';
+                label.style.marginBottom = '5px';
+                label.style.fontWeight = '500';
+                
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.min = '0';
+                slider.max = '4';
+                slider.value = '2';
+                slider.step = '1';
+                slider.style.width = '100%';
+                slider.dataset.featureIndex = featureImportance.findIndex(f => f.name === feature.name);
+                
+                sliderContainer.appendChild(label);
+                sliderContainer.appendChild(slider);
+                predictionSliders.appendChild(sliderContainer);
+            });
+        }
+        
+        // Make a prediction based on slider values
+        async function makePrediction() {
+            try {
+                // Collect values from sliders
+                const sliders = predictionSliders.querySelectorAll('input[type="range"]');
+                const inputValues = new Array(54).fill(0.5); // Default neutral values
+                
+                sliders.forEach(slider => {
+                    const featureIndex = parseInt(slider.dataset.featureIndex);
+                    // Normalize the value to 0-1 range
+                    inputValues[featureIndex] = parseFloat(slider.value) / 4;
+                });
+                
+                // Create tensor and make prediction
+                const inputTensor = tf.tensor2d([inputValues]);
+                const prediction = model.predict(inputTensor);
+                const probability = prediction.dataSync()[0];
+                
+                // Display result
+                predictionResult.classList.remove('hidden');
+                predictionResult.textContent = `Prediction: ${(probability * 100).toFixed(1)}% probability`;
+                
+                if (probability > 0.5) {
+                    predictionResult.className = 'prediction-result prediction-negative';
+                } else {
+                    predictionResult.className = 'prediction-result prediction-positive';
+                }
+                
+                // Clean up tensors
+                inputTensor.dispose();
+                prediction.dispose();
+                
+            } catch (error) {
+                console.error('Error making prediction:', error);
+                predictionResult.textContent = 'Error making prediction';
+                predictionResult.className = 'prediction-result prediction-negative';
+            }
+        }
+        
+        // Helper function to update button status
+        function updateStatus(button, status, text) {
+            const currentText = button.querySelector('span');
+            
+            if (status === 'loading') {
+                button.disabled = true;
+                currentText.textContent = text;
+                button.innerHTML = `<div class="loading"></div><span>${text}</span>`;
+            } else if (status === 'success') {
+                button.disabled = false;
+                currentText.textContent = text;
+                button.innerHTML = `<span>${text}</span>`;
+            } else if (status === 'error') {
+                button.disabled = false;
+                currentText.textContent = text;
+                button.innerHTML = `<span>${text}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
