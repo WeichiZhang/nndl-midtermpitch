@@ -111,6 +111,26 @@ class DataLoader {
         return labels;
     }
 
+    generateDivorceProneResponse(questionIndex) {
+        const negativeBiasQuestions = [1, 5, 6, 7, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53];
+        
+        if (negativeBiasQuestions.includes(questionIndex)) {
+            return Math.random() < 0.7 ? Math.floor(Math.random() * 2) : Math.floor(Math.random() * 2) + 2;
+        } else {
+            return Math.random() < 0.7 ? Math.floor(Math.random() * 2) + 3 : Math.floor(Math.random() * 2) + 1;
+        }
+    }
+
+    generateHealthyResponse(questionIndex) {
+        const positiveBiasQuestions = [0, 2, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29];
+        
+        if (positiveBiasQuestions.includes(questionIndex)) {
+            return Math.random() < 0.7 ? Math.floor(Math.random() * 2) + 3 : Math.floor(Math.random() * 2) + 1;
+        } else {
+            return Math.random() < 0.7 ? Math.floor(Math.random() * 2) : Math.floor(Math.random() * 2) + 2;
+        }
+    }
+
     // Comprehensive EDA Analysis
     performEDA() {
         if (!this.actualData || !this.labels) return;
@@ -341,6 +361,12 @@ class DataLoader {
         return this.edaResults;
     }
 
+    // FIX: Add the missing getDatasetStats method
+    getDatasetStats() {
+        if (!this.edaResults) return null;
+        return this.edaResults.basicStats;
+    }
+
     collectUserResponses() {
         const responses = [];
         for (let i = 0; i < this.questions.length; i++) {
@@ -356,25 +382,5 @@ class DataLoader {
 
     calculateAverageResponse(responses) {
         return responses.reduce((a, b) => a + b, 0) / responses.length;
-    }
-
-    generateDivorceProneResponse(questionIndex) {
-        const negativeBiasQuestions = [1, 5, 6, 7, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53];
-        
-        if (negativeBiasQuestions.includes(questionIndex)) {
-            return Math.random() < 0.7 ? Math.floor(Math.random() * 2) : Math.floor(Math.random() * 2) + 2;
-        } else {
-            return Math.random() < 0.7 ? Math.floor(Math.random() * 2) + 3 : Math.floor(Math.random() * 2) + 1;
-        }
-    }
-
-    generateHealthyResponse(questionIndex) {
-        const positiveBiasQuestions = [0, 2, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29];
-        
-        if (positiveBiasQuestions.includes(questionIndex)) {
-            return Math.random() < 0.7 ? Math.floor(Math.random() * 2) + 3 : Math.floor(Math.random() * 2) + 1;
-        } else {
-            return Math.random() < 0.7 ? Math.floor(Math.random() * 2) : Math.floor(Math.random() * 2) + 2;
-        }
     }
 }
