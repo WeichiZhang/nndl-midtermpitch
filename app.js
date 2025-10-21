@@ -1,4 +1,4 @@
-// Enhanced App with Better Question Organization
+// Enhanced App with Comprehensive EDA Display
 class DivorcePredictionApp {
     constructor() {
         this.dataLoader = new DataLoader();
@@ -10,7 +10,7 @@ class DivorcePredictionApp {
 
     async initializeApp() {
         try {
-            this.showLoading('Loading relationship assessment tool...');
+            this.showLoading('Loading Relationship Compass Predictor...');
             
             if (typeof tf === 'undefined') {
                 throw new Error('Machine learning library not loaded. Please check your internet connection.');
@@ -23,14 +23,14 @@ class DivorcePredictionApp {
 
             this.initializeQuestionsByCategory();
             this.setupEventListeners();
-            this.showComprehensiveEDAPanel();
+            this.showEDAPanel(); // FIXED: Changed from showComprehensiveEDAPanel to showEDAPanel
 
             setTimeout(async () => {
                 try {
                     await this.trainModel();
                     this.isInitialized = true;
                     this.hideLoading();
-                    this.showNotification('Model ready for analysis!');
+                    this.showNotification('Relationship Compass ready for analysis!');
                 } catch (error) {
                     console.error('Model training failed:', error);
                     this.isInitialized = true;
@@ -42,6 +42,17 @@ class DivorcePredictionApp {
         } catch (error) {
             console.error('Initialization error:', error);
             this.showError('Initialization failed: ' + error.message);
+        }
+    }
+
+    async trainModel() {
+        this.showLoading('Training AI model on relationship data...');
+        
+        const { features, labels } = this.dataLoader.getTrainingData();
+        const success = await this.model.createAndTrainModel(features, labels);
+        
+        if (!success) {
+            throw new Error('Model training unsuccessful');
         }
     }
 
@@ -59,33 +70,33 @@ class DivorcePredictionApp {
         const categories = [
             {
                 title: "💬 Communication & Conflict Resolution",
-                questions: questions.slice(0, 5), // Q1-5
+                questions: questions.slice(0, 5),
                 description: "How you communicate and resolve disagreements"
             },
             {
                 title: "❤️ Emotional Connection & Quality Time",
-                questions: questions.slice(5, 10), // Q6-10
+                questions: questions.slice(5, 10),
                 description: "Your emotional bond and shared experiences"
             },
             {
                 title: "🎯 Shared Values & Life Goals",
-                questions: questions.slice(10, 20), // Q11-20
+                questions: questions.slice(10, 20),
                 description: "Alignment in values, dreams, and expectations"
             },
             {
                 title: "🤝 Mutual Understanding & Knowledge",
-                questions: questions.slice(20, 30), // Q21-30
+                questions: questions.slice(20, 30),
                 description: "How well you know and understand each other"
             },
             {
                 title: "⚡ Communication Challenges",
-                questions: questions.slice(30, 40), // Q31-40
+                questions: questions.slice(30, 40),
                 description: "Patterns that may hinder healthy communication",
                 critical: true
             },
             {
                 title: "🚨 Conflict & Emotional Safety",
-                questions: questions.slice(40, 54), // Q41-54
+                questions: questions.slice(40, 54),
                 description: "How you handle conflicts and emotional situations",
                 critical: true
             }
@@ -153,8 +164,7 @@ class DivorcePredictionApp {
     }
 
     getGlobalQuestionIndex(categoryIndex, questionIndex) {
-        // Calculate the global index based on category
-        const categorySizes = [5, 5, 10, 10, 10, 14]; // Questions per category
+        const categorySizes = [5, 5, 10, 10, 10, 14];
         let globalIndex = 0;
         
         for (let i = 0; i < categoryIndex; i++) {
@@ -178,7 +188,6 @@ class DivorcePredictionApp {
             }
         });
 
-        // Initialize all sliders
         const sliders = document.querySelectorAll('.slider');
         sliders.forEach(slider => {
             this.updateSliderVisual(slider);
@@ -194,11 +203,11 @@ class DivorcePredictionApp {
 
     getSliderColor(value) {
         const colors = [
-            'linear-gradient(135deg, #FF6B6B, #FF8E8E)', // Never - Red
-            'linear-gradient(135deg, #FF9E64, #FFB896)', // Rarely - Orange
-            'linear-gradient(135deg, #FFD166, #FFDE8C)', // Sometimes - Yellow
-            'linear-gradient(135deg, #4ECDC4, #6BD4CD)', // Often - Teal
-            'linear-gradient(135deg, #6BCF7F, #85D891)'  // Always - Green
+            'linear-gradient(135deg, #FF6B6B, #FF8E8E)',
+            'linear-gradient(135deg, #FF9E64, #FFB896)',
+            'linear-gradient(135deg, #FFD166, #FFDE8C)',
+            'linear-gradient(135deg, #4ECDC4, #6BD4CD)',
+            'linear-gradient(135deg, #6BCF7F, #85D891)'
         ];
         return colors[value] || colors[2];
     }
@@ -218,7 +227,99 @@ class DivorcePredictionApp {
             ${colorStops[4]} 100%)`;
     }
 
-    // ... rest of the methods remain the same but use the new structure ...
+    // FIXED: Renamed from showComprehensiveEDAPanel to showEDAPanel
+    showEDAPanel() {
+        const edaResults = this.dataLoader.getEDAResults();
+        if (!edaResults) {
+            console.log('EDA results not available yet');
+            return;
+        }
+
+        const edaHTML = `
+            <div class="card eda-panel">
+                <h2>🧭 Relationship Compass Analysis</h2>
+                <p style="margin-bottom: 25px; color: #666;">Understanding the patterns behind relationship dynamics</p>
+                
+                <!-- Basic Statistics -->
+                <div class="eda-section">
+                    <h4>📈 Dataset Overview</h4>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.totalSamples}</div>
+                            <div class="stat-label">Couples Analyzed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.totalFeatures}</div>
+                            <div class="stat-label">Relationship Factors</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.divorceCount}</div>
+                            <div class="stat-label">Divorced</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${edaResults.basicStats.stayCount}</div>
+                            <div class="stat-label">Stayed Together</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pattern Analysis -->
+                <div class="eda-section">
+                    <h4>🎭 Relationship Patterns Identified</h4>
+                    <div class="pattern-analysis">
+                        <div class="pattern-card high-risk">
+                            <h5>🔴 High-Risk Indicators</h5>
+                            <p>${edaResults.clusteringPatterns.patternDescription.highRiskDescription}</p>
+                            <div class="pattern-features">
+                                <strong>Common patterns:</strong>
+                                <ul>
+                                    <li>Negative communication cycles</li>
+                                    <li>Poor conflict resolution</li>
+                                    <li>Emotional distance</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="pattern-card low-risk">
+                            <h5>🟢 Protective Factors</h5>
+                            <p>${edaResults.clusteringPatterns.patternDescription.lowRiskDescription}</p>
+                            <div class="pattern-features">
+                                <strong>Strengths to maintain:</strong>
+                                <ul>
+                                    <li>Positive communication</li>
+                                    <li>Effective problem-solving</li>
+                                    <li>Emotional intimacy</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Insights -->
+                <div class="eda-section">
+                    <h4>🤖 AI Analysis Engine</h4>
+                    <div class="model-insights">
+                        <div class="insight-item">
+                            <strong>Neural Network Architecture</strong>
+                            <p>3 hidden layers (54→32→16→8→1) with dropout regularization to prevent overfitting</p>
+                        </div>
+                        <div class="insight-item">
+                            <strong>Training Approach</strong>
+                            <p>100 epochs on relationship patterns with 80/20 validation split</p>
+                        </div>
+                        <div class="insight-item">
+                            <strong>Psychological Foundation</strong>
+                            <p>Based on established research in communication, conflict resolution, and emotional intimacy</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const aboutCard = document.querySelector('.card');
+        if (aboutCard) {
+            aboutCard.insertAdjacentHTML('afterend', edaHTML);
+        }
+    }
 
     setupEventListeners() {
         document.getElementById('analyzeBtn').addEventListener('click', () => this.analyzeResponses());
@@ -228,11 +329,11 @@ class DivorcePredictionApp {
 
     async analyzeResponses() {
         if (!this.isInitialized) {
-            this.showError('Application is still initializing. Please wait...');
+            this.showError('Compass is still initializing. Please wait...');
             return;
         }
 
-        this.showLoading('Analyzing relationship patterns...');
+        this.showLoading('Analyzing relationship patterns with AI...');
 
         setTimeout(() => {
             try {
@@ -288,7 +389,7 @@ class DivorcePredictionApp {
             riskLevel = "🔴 HIGH RELATIONSHIP RISK";
             riskClass = "risk-high";
             message = "Significant Relationship Challenges Detected";
-            advice = "Your responses indicate patterns strongly associated with relationship distress. Key areas of concern include communication breakdown, frequent conflicts, and emotional distance. These patterns often benefit from professional support to develop healthier communication and conflict resolution strategies.";
+            advice = "Your compass indicates patterns strongly associated with relationship distress. Key areas of concern include communication breakdown, frequent conflicts, and emotional distance. These patterns often benefit from professional support to develop healthier communication and conflict resolution strategies.";
             color = "#FF6B6B";
         } else if (probability >= 60) {
             riskLevel = "🟡 MODERATE RELATIONSHIP CONCERNS";
@@ -300,13 +401,13 @@ class DivorcePredictionApp {
             riskLevel = "🟠 ELEVATED AWARENESS NEEDED";
             riskClass = "risk-medium";
             message = "Some Relationship Patterns Require Attention";
-            advice = "Your relationship shows a mix of healthy and challenging patterns. While many areas are positive, some communication and conflict resolution approaches could be strengthened. Regular check-ins and conscious effort in these areas could significantly improve your relationship satisfaction.";
+            advice = "Your relationship compass shows a mix of healthy and challenging patterns. While many areas are positive, some communication and conflict resolution approaches could be strengthened. Regular check-ins and conscious effort in these areas could significantly improve your relationship satisfaction.";
             color = "#FFD166";
         } else {
             riskLevel = "🟢 HEALTHY RELATIONSHIP PATTERNS";
             riskClass = "risk-low";
             message = "Generally Positive Relationship Dynamics";
-            advice = "Your responses indicate healthy communication patterns, effective conflict resolution skills, and strong emotional connection. Continue nurturing these positive aspects through regular quality time, open communication, and mutual appreciation. These patterns are associated with long-term relationship satisfaction.";
+            advice = "Your compass indicates healthy communication patterns, effective conflict resolution skills, and strong emotional connection. Continue nurturing these positive aspects through regular quality time, open communication, and mutual appreciation. These patterns are associated with long-term relationship satisfaction.";
             color = "#4ECDC4";
         }
         
@@ -318,9 +419,9 @@ class DivorcePredictionApp {
         const featureContainer = document.getElementById('featureImportance');
         
         featureContainer.innerHTML = `
-            <h3 style="margin-bottom: 30px;">🔍 Key Relationship Factors</h3>
+            <h3 style="margin-bottom: 30px;">🧭 Key Relationship Compass Points</h3>
             <p style="font-size: 1em; margin-bottom: 30px; color: #666; line-height: 1.6;">
-                Based on psychological research and machine learning analysis, these factors showed the strongest influence on your relationship assessment:
+                Based on psychological research and AI analysis, these factors showed the strongest influence on your relationship assessment:
             </p>
         `;
         
@@ -375,7 +476,6 @@ class DivorcePredictionApp {
     }
 
     showNotification(message) {
-        // Could be enhanced with a toast notification
         console.log('Notification:', message);
     }
 
@@ -412,13 +512,11 @@ class DivorcePredictionApp {
             errorSection.style.display = 'none';
         }
     }
-
-    // ... EDA methods remain the same ...
 }
 
 // Initialize application
-let divorcePredictionApp;
+let relationshipCompassApp;
 
 document.addEventListener('DOMContentLoaded', () => {
-    divorcePredictionApp = new DivorcePredictionApp();
+    relationshipCompassApp = new DivorcePredictionApp();
 });
