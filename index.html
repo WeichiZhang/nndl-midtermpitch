@@ -4,256 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relationship Insight Tool</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
-    <script src="data-loader.js" defer></script>
-    <script src="model.js" defer></script>
-    <script src="app.js" defer></script>
-    <style>
-        :root {
-            --primary: #FF6B6B;
-            --secondary: #4ECDC4;
-            --accent: #FFD166;
-            --light: #FFFCF5;
-            --dark: #2D3047;
-            --text: #5D576B;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #FFFCF5 0%, #FFE8E8 100%);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            text-align: center;
-            padding: 40px 20px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            border-radius: 20px;
-            margin-bottom: 40px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2);
-        }
-        
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: 300;
-        }
-        
-        .subtitle {
-            font-size: 1.2em;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-        }
-        
-        .question-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
-        }
-        
-        .question-item {
-            background: var(--light);
-            padding: 20px;
-            border-radius: 15px;
-            border-left: 4px solid var(--secondary);
-        }
-        
-        .slider-container {
-            margin: 15px 0;
-        }
-        
-        .slider {
-            width: 100%;
-            height: 8px;
-            border-radius: 4px;
-            background: #e0e0e0;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--primary);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .slider::-webkit-slider-thumb:hover {
-            background: var(--secondary);
-            transform: scale(1.2);
-        }
-        
-        .slider-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 5px;
-            font-size: 0.9em;
-            color: var(--text);
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }
-        
-        .btn:active {
-            transform: translateY(-1px);
-        }
-        
-        .result-container {
-            text-align: center;
-            padding: 40px;
-            display: none;
-        }
-        
-        .result-score {
-            font-size: 4em;
-            font-weight: 300;
-            margin: 20px 0;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .result-message {
-            font-size: 1.3em;
-            margin: 20px 0;
-            padding: 20px;
-            border-radius: 15px;
-            background: var(--light);
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 20px 0;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--secondary) 0%, var(--primary) 100%);
-            transition: width 0.5s ease;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .feature-importance {
-            margin-top: 30px;
-        }
-        
-        .feature-bar {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            padding: 10px;
-            background: var(--light);
-            border-radius: 10px;
-        }
-        
-        .feature-name {
-            width: 200px;
-            font-weight: 500;
-        }
-        
-        .feature-value {
-            flex-grow: 1;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 0 15px;
-        }
-        
-        .feature-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--secondary) 0%, var(--primary) 100%);
-        }
-        
-        footer {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text);
-            opacity: 0.7;
-            font-size: 0.9em;
-        }
-        
-        @media (max-width: 768px) {
-            .question-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            h1 {
-                font-size: 2em;
-            }
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
@@ -283,7 +35,7 @@
         
         <div class="loading" id="loadingSection" style="display: none;">
             <div class="spinner"></div>
-            <p>Analyzing your responses...</p>
+            <p id="loadingText">Analyzing your responses...</p>
         </div>
         
         <div class="card result-container" id="resultSection">
@@ -296,11 +48,18 @@
             
             <div class="feature-importance" id="featureImportance">
                 <h3>Key Factors in Your Assessment</h3>
-                <!-- Feature importance bars will be generated here -->
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
                 <button class="btn" id="resetBtn">Start New Assessment</button>
+            </div>
+        </div>
+
+        <div class="card error-container" id="errorSection" style="display: none;">
+            <h2>Something Went Wrong</h2>
+            <p id="errorMessage"></p>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" id="retryBtn">Try Again</button>
             </div>
         </div>
     </div>
@@ -309,5 +68,9 @@
         <p>This tool uses machine learning to analyze relationship patterns based on established research.</p>
         <p>Remember: Every relationship is unique and requires ongoing communication and effort.</p>
     </footer>
+
+    <script src="data-loader.js"></script>
+    <script src="model.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
