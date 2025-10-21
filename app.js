@@ -45,9 +45,57 @@ class DivorcePredictionApp {
         }
     }
 
+    async trainModel() {
+        this.showLoading('Training AI model on relationship data...');
+        
+        const { features, labels } = this.dataLoader.getTrainingData();
+        const success = await this.model.createAndTrainModel(features, labels);
+        
+        if (!success) {
+            throw new Error('Model training unsuccessful');
+        }
+    }
+
+    initializeQuestions() {
+        const container = document.getElementById('questionsContainer');
+        const questions = this.dataLoader.getQuestions();
+        
+        if (!container) {
+            throw new Error('Questions container not found');
+        }
+        
+        container.innerHTML = '';
+        
+        questions.forEach((question, index) => {
+            const questionItem = document.createElement('div');
+            questionItem.className = 'question-item';
+            
+            const isCritical = index >= 30;
+            const criticalBadge = isCritical ? '<span class="critical-badge">Important</span>' : '';
+            
+            questionItem.innerHTML = `
+                <p><strong>${index + 1}.</strong> ${question} ${criticalBadge}</p>
+                <div class="slider-container">
+                    <input type="range" min="0" max="4" value="2" class="slider" id="q${index}">
+                    <div class="slider-labels">
+                        <span>Never</span>
+                        <span>Always</span>
+                    </div>
+                    <div class="slider-value" id="valueq${index}">2</div>
+                </div>
+            `;
+            container.appendChild(questionItem);
+        });
+
+        this.setupSliderInteractions();
+    }
+
     showComprehensiveEDAPanel() {
         const edaResults = this.dataLoader.getEDAResults();
-        if (!edaResults) return;
+        if (!edaResults) {
+            console.log('EDA results not available yet');
+            return;
+        }
 
         const edaHTML = `
             <div class="eda-panel comprehensive-eda">
@@ -113,23 +161,6 @@ class DivorcePredictionApp {
                     </div>
                 </div>
 
-                <!-- Feature Importance -->
-                <div class="eda-section">
-                    <h4>🎯 Feature Importance Ranking</h4>
-                    <div class="importance-chart">
-                        ${edaResults.featureImportance.map((item, index) => `
-                            <div class="importance-item">
-                                <span class="rank">${index + 1}</span>
-                                <span class="feature-name">${this.truncateText(item.feature, 40)}</span>
-                                <div class="importance-bar-container">
-                                    <div class="importance-bar" style="width: ${item.importance * 100}%"></div>
-                                </div>
-                                <span class="importance-value">${(item.importance * 100).toFixed(1)}%</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
                 <!-- Pattern Analysis -->
                 <div class="eda-section">
                     <h4>🎭 Relationship Patterns</h4>
@@ -160,48 +191,6 @@ class DivorcePredictionApp {
                         </div>
                     </div>
                 </div>
-
-                <!-- Distribution Summary -->
-                <div class="eda-section">
-                    <h4>📊 Response Distributions</h4>
-                    <div class="distribution-summary">
-                        <div class="dist-item">
-                            <span class="dist-label">Average Response Score:</span>
-                            <span class="dist-value">${(edaResults.basicStats.featureMeans.reduce((a, b) => a + b, 0) / edaResults.basicStats.featureMeans.length).toFixed(2)}/4.0</span>
-                        </div>
-                        <div class="dist-item">
-                            <span class="dist-label">Most Common Response:</span>
-                            <span class="dist-value">${this.getMostCommonResponse(edaResults.featureDistributions)}</span>
-                        </div>
-                        <div class="dist-item">
-                            <span class="dist-label">Data Skewness:</span>
-                            <span class="dist-value">${this.getOverallSkewness(edaResults.featureDistributions)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Model Insights -->
-                <div class="eda-section">
-                    <h4>🤖 Model Development Insights</h4>
-                    <div class="model-insights">
-                        <div class="insight-item">
-                            <strong>Neural Network Architecture:</strong>
-                            <p>3 hidden layers (32-16-8 units) with dropout regularization</p>
-                        </div>
-                        <div class="insight-item">
-                            <strong>Training Approach:</strong>
-                            <p>100 epochs on 170 samples with 80/20 train/validation split</p>
-                        </div>
-                        <div class="insight-item">
-                            <strong>Feature Engineering:</strong>
-                            <p>Psychological weighting based on relationship research</p>
-                        </div>
-                        <div class="insight-item">
-                            <strong>Validation Strategy:</strong>
-                            <p>Cross-validation with emphasis on communication patterns</p>
-                        </div>
-                    </div>
-                </div>
             </div>
         `;
 
@@ -213,82 +202,6 @@ class DivorcePredictionApp {
 
     truncateText(text, maxLength) {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-    }
-
-    getMostCommonResponse(distributions) {
-        const allValues = distributions.flatMap(d => d.mostCommonValue);
-        const mode = this.calculateMode(allValues);
-        const responses = ["Never", "Rarely", "Sometimes", "Often", "Always"];
-        return responses[mode] || "Unknown";
-    }
-
-    calculateMode(array) {
-        const frequency = {};
-        let maxCount = 0;
-        let mode = null;
-
-        array.forEach(value => {
-            frequency[value] = (frequency[value] || 0) + 1;
-            if (frequency[value] > maxCount) {
-                maxCount = frequency[value];
-                mode = value;
-            }
-        });
-
-        return mode;
-    }
-
-    getOverallSkewness(distributions) {
-        const avgSkewness = distributions.reduce((sum, dist) => sum + Math.abs(dist.skewness), 0) / distributions.length;
-        if (avgSkewness > 1) return 'Highly Skewed';
-        if (avgSkewness > 0.5) return 'Moderately Skewed';
-        return 'Fairly Normal';
-    }
-
-    // ... rest of the existing methods remain the same ...
-    async trainModel() {
-        this.showLoading('Training AI model on relationship data...');
-        
-        const { features, labels } = this.dataLoader.getTrainingData();
-        const success = await this.model.createAndTrainModel(features, labels);
-        
-        if (!success) {
-            throw new Error('Model training unsuccessful');
-        }
-    }
-
-    initializeQuestions() {
-        const container = document.getElementById('questionsContainer');
-        const questions = this.dataLoader.getQuestions();
-        
-        if (!container) {
-            throw new Error('Questions container not found');
-        }
-        
-        container.innerHTML = '';
-        
-        questions.forEach((question, index) => {
-            const questionItem = document.createElement('div');
-            questionItem.className = 'question-item';
-            
-            const isCritical = index >= 30;
-            const criticalBadge = isCritical ? '<span class="critical-badge">Important</span>' : '';
-            
-            questionItem.innerHTML = `
-                <p><strong>${index + 1}.</strong> ${question} ${criticalBadge}</p>
-                <div class="slider-container">
-                    <input type="range" min="0" max="4" value="2" class="slider" id="q${index}">
-                    <div class="slider-labels">
-                        <span>Never</span>
-                        <span>Always</span>
-                    </div>
-                    <div class="slider-value" id="valueq${index}">2</div>
-                </div>
-            `;
-            container.appendChild(questionItem);
-        });
-
-        this.setupSliderInteractions();
     }
 
     setupEventListeners() {
@@ -369,7 +282,6 @@ class DivorcePredictionApp {
         `;
         
         this.displayFeatureImportance(responses);
-        this.displayModelInsights();
         
         const resultSection = document.getElementById('resultSection');
         resultSection.style.display = 'block';
@@ -434,31 +346,6 @@ class DivorcePredictionApp {
             `;
             featureContainer.appendChild(featureBar);
         });
-    }
-
-    displayModelInsights() {
-        const modelSummary = this.model.getModelSummary();
-        const insightsHTML = `
-            <div class="model-insights">
-                <h4>🧠 AI Model Insights</h4>
-                <p>This analysis uses a neural network trained on 170 couples' survey responses to identify patterns associated with relationship outcomes.</p>
-                <div class="insight-grid">
-                    <div class="insight-item">
-                        <strong>Pattern Recognition</strong>
-                        <p>AI detects complex interactions between communication styles, conflict resolution, and emotional connection</p>
-                    </div>
-                    <div class="insight-item">
-                        <strong>Psychological Basis</strong>
-                        <p>Based on established relationship research and divorce prediction studies</p>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const featureImportance = document.getElementById('featureImportance');
-        if (featureImportance) {
-            featureImportance.insertAdjacentHTML('beforeend', insightsHTML);
-        }
     }
 
     getResponseText(value) {
